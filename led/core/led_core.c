@@ -1,7 +1,7 @@
 // led_core.c
 #include "led_core.h"
 #include "gpio_led.h"   // 声明 gpio_led_create
-
+#include"stdint.h"
 #include "delay1.h"      // 提供 GetTickCount()
 
 // 时间常量（毫秒）
@@ -11,11 +11,15 @@
 
 // 全局 LED 实例数组
 static led_instance_t g_leds[LED_COUNT];
-
+static const TimeInsterface* g_time_if =0; //全局时间 V1.1 新增
 /**
  * @brief 初始化所有 LED
  */
-void led_manager_init(void) {
+int led_manager_init(const TimeInsterface* time_if) {
+    //初始化时间
+    if(!time_if||!time_if->get_tick_ms) return -1;
+    g_time_if=time_if;
+    
     for (int i = 0; i < LED_COUNT; i++) {
         const led_config_t* cfg = &g_led_configs[i];
         led_instance_t* led = &g_leds[i];
@@ -45,7 +49,8 @@ void led_manager_init(void) {
  * @brief 更新单个 LED 状态
  */
 static void led_update_single(led_instance_t* led) {
-    uint32_t now = GetTickCount();
+    uint32_t now = g_time_if->get_tick_ms(); //使用时间接口 V1.1修改
+    led->current_state=led->mode; //同步状态 v1.1新增
 
     switch (led->mode) {
         case LED_MODE_OFF:
@@ -122,7 +127,7 @@ void led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode) {
     for (int i = 0; i < LED_COUNT; i++) {
         if (g_leds[i].config == cfg) {
             g_leds[i].mode = mode;
-            g_leds[i].last_update_ms = GetTickCount();
+            g_leds[i].last_update_ms = g_time_if->get_tick_ms(); //v1.1修改
             // 重置特殊模式状态
             if (mode == LED_MODE_FLASH_3X) {
                 g_leds[i].blink_count = 0;
@@ -134,4 +139,15 @@ void led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode) {
             break;
         }
     }
+}
+
+//查询状态 v1.1新增
+
+led_mode_t led_get_state_by_config(const led_config_t* cfg){
+    for(int  i=0;i<LED_COUNT;i++){
+        if(g_leds[i].config==cfg){
+            return g_leds[i].current_state;
+        }
+    }
+    return LED_MODE_OFF;
 }

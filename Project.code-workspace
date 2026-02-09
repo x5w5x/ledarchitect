@@ -12,7 +12,9 @@
             "led_core.h": "c",
             "led_hal.h": "c",
             "led_base.h": "c",
-            "led_manager.h": "c"
+            "led_manager.h": "c",
+            "led_event.h": "c",
+            "stm32f10x.h": "c"
         }
     },
     "extensions": {}

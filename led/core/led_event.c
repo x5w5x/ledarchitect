@@ -1,16 +1,10 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 20:27:33
- * @LastEditTime: 2026-02-07 22:12:31
+ * @LastEditTime: 2026-02-08 16:48:26
  * @FilePath: \led\led\core\led_event.c
  */
-// /*
-//  * @Author: 轩
-//  * @Date: 2026-02-06 20:27:33
-//  * @LastEditTime: 2026-02-06 20:59:45
-//  * @FilePath: \led\led\core\led_event.c
-//  */
-// // led_event.c
+// led_event.c
 #include "led_event.h"
 #include "led_core.h"
 #include "config_led.h"
@@ -20,7 +14,7 @@
  */
 void led_event_ready(void) {
     led_set_mode_by_config(LED_STATUS, LED_MODE_OFF);
-    // led_set_mode_by_config(LED_BREATH, LED_MODE_ON);
+    led_set_mode_by_config(LED_BREATH, LED_MODE_ON);
 }
 
 /**
@@ -28,7 +22,7 @@ void led_event_ready(void) {
  */
 void led_event_error(void) {
     led_set_mode_by_config(LED_STATUS, LED_MODE_FLASH_3X);
-    // led_set_mode_by_config(LED_BREATH, LED_MODE_OFF);
+    led_set_mode_by_config(LED_BREATH, LED_MODE_OFF);
 }
 
 /**
@@ -36,5 +30,5 @@ void led_event_error(void) {
  */
 void led_event_breathing_demo(void) {
     led_set_mode_by_config(LED_STATUS, LED_MODE_OFF);
-    //led_set_mode_by_config(LED_BREATH, LED_MODE_BREATHING);
+    led_set_mode_by_config(LED_BREATH, LED_MODE_BREATHING);
 }

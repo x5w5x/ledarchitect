@@ -3,16 +3,18 @@
 
 #include<stdint.h>
 
+//颜色配置
 typedef struct { 
     uint8_t r,g,b;
 }led_color_t;
 
+//LED驱动
 typedef struct led_driver{
- void* priv;
- int (*init)(struct led_driver* self);
- int (*set_state)(struct led_driver* self,uint8_t on);
- int (*set_brightness)(struct led_driver* self, uint8_t level);
- int (*set_color)(struct led_driver* self, const led_color_t* color);
+ void* priv; //私有数据指针
+ int (*init)(struct led_driver* self);   //初始化
+ int (*set_state)(struct led_driver* self,uint8_t on);  //设置状态
+ int (*set_brightness)(struct led_driver* self, uint8_t level); //设置亮度
+ int (*set_color)(struct led_driver* self, const led_color_t* color); //设置颜色为
 }led_driver_t;
 
 #endif // !_LED_DRIVER_H
