@@ -14,7 +14,8 @@
             "led_base.h": "c",
             "led_manager.h": "c",
             "led_event.h": "c",
-            "stm32f10x.h": "c"
+            "stm32f10x.h": "c",
+            "compiler.h": "c"
         }
     },
     "extensions": {}

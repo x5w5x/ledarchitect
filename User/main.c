@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 19:12:36
- * @LastEditTime: 2026-02-09 21:58:44
+ * @LastEditTime: 2026-02-09 22:42:01
  * @FilePath: \led\User\main.c
  */
 
@@ -23,7 +23,7 @@ int main(void)
 	led_manager_init(&time_if);
 	  led_set_mode_by_config(LED_BREATH, LED_MODE_BLINK_SLOW);
 	  led_set_mode_by_config(LED_STATUS,LED_MODE_BLINK_FAST);
-	  led_set_mode_by_config(LED_ID,LED_MODE_BLINK_FAST);
+	  led_set_mode_by_config(LED_TWO,LED_MODE_BLINK_FAST);
 	while (1)
 	{
 		 led_manager_update();
