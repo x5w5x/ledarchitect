@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 20:24:05
- * @LastEditTime: 2026-02-09 21:58:24
+ * @LastEditTime: 2026-02-11 21:47:59
  * @FilePath: \led\led\core\led_core.h
  */
 // led_core.h
@@ -11,6 +11,7 @@
 #include "config_led.h"
 #include "led_driver.h"
 #include <stdint.h>
+#include"led_errors.h"
 
 /**
  * @brief  时间接口 V1.1
@@ -38,7 +39,7 @@ typedef enum {
  * @brief 单个 LED 实例
  */
 typedef struct {
-    const led_config_t* config; // 配置
+    // const led_config_t* config; // 配置 //需不需要都行
     led_driver_t* driver;       // 驱动
     led_mode_t mode;            // 当前模式
     uint32_t last_update_ms;    // 上次更新时间（ms）
@@ -48,13 +49,28 @@ typedef struct {
     led_mode_t current_state; //当前状态 V1.1
 } led_instance_t;
 
+
+
+
+
 /**
  * @brief 公共 API
  */
-int led_manager_init(const TimeInsterface* time_if);                     // 初始化所有 LED V1.1
+led_err_t led_manager_init(const TimeInsterface* time_if);                     // 初始化所有 LED V1.1
 void led_manager_update(void);                   // 主循环调用，推进状态机
-void led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode); // 设置模式
+// led_err_t led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode); // 设置模式 V2.2"删除
+led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode); //设置模式 V2.2修改
 
 led_mode_t led_get_state_by_config(const led_config_t* cfg); //查询状态 V1.1
 
+
+//V2.2 新增 双模式支持
+//
+
+typedef struct led_instance_t* led_handle_t;
+led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted);
+led_err_t led_set_mode(led_handle_t,led_mode_t mode);
+
+#define MAX_LED_INSTANCES 8 //最大的驱动池数量
+#define STATIC_LED_COUNT LED_COUNT
 #endif

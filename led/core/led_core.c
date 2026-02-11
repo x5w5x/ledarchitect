@@ -3,6 +3,7 @@
 #include "gpio_led.h"   // 声明 gpio_led_create
 #include"stdint.h"
 #include "delay1.h"      // 提供 GetTickCount()
+#include"string.h"
 
 // 时间常量（毫秒）
 #define BLINK_SLOW_HALF_PERIOD  500  // 慢闪半周期
@@ -10,45 +11,44 @@
 #define BREATH_STEP_INTERVAL    30   // 呼吸步进间隔
 
 // 全局 LED 实例数组
-static led_instance_t g_leds[LED_COUNT];
+// static led_instance_t g_leds[LED_COUNT];
 static const TimeInsterface* g_time_if =0; //全局时间 V1.1 新增
+
+//V2.2 驱动池
+static led_instance_t g_led_pool[MAX_LED_INSTANCES];
+static int g_led_used[MAX_LED_INSTANCES]={0};
+static int g_instance_count=0;
+
+
+
 /**
  * @brief 初始化所有 LED
  */
-int led_manager_init(const TimeInsterface* time_if) {
+led_err_t led_manager_init(const TimeInsterface* time_if) {
     //初始化时间
-    if(!time_if||!time_if->get_tick_ms) return -1;
+    if(!time_if||!time_if->get_tick_ms) return LED_ERR_INVALID_ARG;
     g_time_if=time_if;
-    
-    for (int i = 0; i < LED_COUNT; i++) {
-        const led_config_t* cfg = &g_led_configs[i];
-        //id范围检查 v1.2新增
-        if(cfg->id>=LED_COUNT){
-            return -2;
+
+    //清空内存池 V2.2新增
+    memset(g_led_pool,0,sizeof(g_led_pool));
+    memset(g_led_used,0,sizeof(g_led_used));
+    //V2.2修改
+    for (int i = 0; i < STATIC_LED_COUNT&&i<MAX_LED_INSTANCES; i++) {
+        led_instance_t* led=&g_led_pool[i];
+        led->driver=gpio_led_create(&g_led_configs[i]);
+        if(led->driver){
+            led->driver->init(led->driver);
+            led->driver->set_state(led->driver,0);
+            led->mode=LED_MODE_OFF;
+            led->last_update_ms=g_time_if->get_tick_ms();
+            led->blink_count=0;
+            led->breath_level = 0;
+            led->breath_dir = 1;
+            g_led_used[i]=1;
         }
-
-        led_instance_t* led = &g_leds[cfg->id]; //v1.2修改
-
-        // 保存配置
-        led->config = cfg;
-        led->mode = LED_MODE_OFF;
-        led->last_update_ms = g_time_if->get_tick_ms(); //v1.1修改
-        led->blink_count = 0;
-        led->breath_level = 0;
-        led->breath_dir = 1;
-
-        // 根据配置选择驱动
-        if (cfg->is_pwm) {
-            // led->driver = pwm_led_create(cfg);
-        } else {
-            led->driver = gpio_led_create(cfg);
-        }
-        if(!led->driver) return -3;
-
-        // 初始化硬件并关闭 LED
-        led->driver->init(led->driver);
-        led->driver->set_state(led->driver, 0);
+        g_instance_count++;
     }
+    return LED_OK;
 }
 
 /**
@@ -121,60 +121,126 @@ static void led_update_single(led_instance_t* led) {
  * @brief 主更新函数（必须在主循环中定期调用）
  */
 void led_manager_update(void) {
-    // for (int i = 0; i < LED_ID_MAX; i++) {
-    //     led_update_single(&g_leds[i]);
-    // }
-    for (int i = 0; i < LED_COUNT; i++) {
-        led_instance_t* led = &g_leds[g_led_configs[i].id];
-        led_update_single(led);
+    //V2.2修改
+    if(!g_time_if) return;
+
+    for(int i=0;i<MAX_LED_INSTANCES;i++){
+        if(g_led_used[i]){
+            led_update_single(&g_led_pool[i]);
+        }
     }
 }
 
 /**
  * @brief 通过配置指针设置 LED 模式
  */
-void led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode) {
-    //
-    if(!cfg||cfg->id>=LED_COUNT) return;
-    led_instance_t* led=&g_leds[cfg->id];
+led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode) {
+    //V2.2修改
+    if(id>=STATIC_LED_COUNT||!g_time_if) return LED_ERR_INVALID_ARG;
 
-    led->mode=mode;
-    led->last_update_ms=g_time_if->get_tick_ms();
+    led_instance_t* led=&g_led_pool[id];
     if(mode==LED_MODE_FLASH_3X){
         led->blink_count=0;
     }
-    if(mode==LED_MODE_BREATHING){
-        led->breath_level=0;
-        led->breath_dir=1;
-    }
+    led->mode=mode;
+    led->last_update_ms=g_time_if->get_tick_ms();
 
-    // for (int i = 0; i < LED_ID_MAX; i++) {
-    //     if (g_leds[i].config == cfg) {
-    //         g_leds[i].mode = mode;
-    //         g_leds[i].last_update_ms = g_time_if->get_tick_ms(); //v1.1修改
-    //         // 重置特殊模式状态
-    //         if (mode == LED_MODE_FLASH_3X) {
-    //             g_leds[i].blink_count = 0;
-    //         }
-    //         if (mode == LED_MODE_BREATHING) {
-    //             g_leds[i].breath_level = 0;
-    //             g_leds[i].breath_dir = 1;
-    //         }
-    //         break;
-    //     }
-    // }
+    return LED_OK;
+   
 }
 
 //查询状态 v1.1新增
 
-led_mode_t led_get_state_by_config(const led_config_t* cfg){
-    // for(int  i=0;i<LED_ID_MAX;i++){
-    //     if(g_leds[i].config==cfg){
-    //         return g_leds[i].current_state;
-    //     }
-    // }
-    // return LED_MODE_OFF;
+// led_mode_t led_get_state_by_config(const led_config_t* cfg){
+//     // for(int  i=0;i<LED_ID_MAX;i++){
+//     //     if(g_leds[i].config==cfg){
+//     //         return g_leds[i].current_state;
+//     //     }
+//     // }
+//     // return LED_MODE_OFF;
 
-    if(!cfg||cfg->id>=LED_COUNT) return LED_MODE_OFF;
-    return g_leds[cfg->id].current_state;
+//     if(!cfg||cfg->id>=LED_COUNT) return LED_MODE_OFF;
+//     return g_leds[cfg->id].current_state;
+// }
+
+//V2.2
+
+//从内存池分配一个实例
+// static led_instance_t* alloc_led_instance(void){
+
+//     for(int i=0;i<MAX_LED_INSTANCES;i++){
+//         if(!g_led_used[i]){
+//             g_led_used[i]=1;
+//             g_instance_count++;
+//             memset(&g_led_pool[i],0,sizeof(led_instance_t));
+//             return &g_led_pool[i];
+            
+//         }
+//     }
+//     return 0;
+// }
+
+
+//
+// static void free_led_instance(led_instance_t* inst) {
+//     if (!inst) return;
+//     for (int i = 0; i < MAX_LED_INSTANCES; i++) {
+//         if (&g_led_pool[i] == inst) {
+//             g_led_used[i] = 0;
+//             g_instance_count--;
+//             break;
+//         }
+//     }
+   
+// }
+
+//
+led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted){
+    if(!g_time_if) return NULL;
+
+    for(int i=STATIC_LED_COUNT;i<MAX_LED_INSTANCES;i++){
+        if(!g_led_used[i]){
+            led_instance_t* led=&g_led_pool[i]; //分配内存空间
+            memset(led,0,sizeof(led_instance_t));
+            led_config_t cfg; //临时配置
+            cfg.name=name?name:"led";
+            cfg.port=port;
+            cfg,pin;
+            cfg.inverted=inverted;
+            cfg.is_pwm=0;
+
+            led->driver=gpio_led_create(&cfg);
+            if(!led->driver) return NULL;
+
+            led->driver->init(led->driver);
+            led->driver->set_state(led->driver,0);
+            led->mode=LED_MODE_OFF;
+            led->last_update_ms=g_time_if->get_tick_ms();
+            led->blink_count=0;
+            led->breath_level = 0;
+            led->breath_dir = 1;
+            g_led_used[i]=1;
+            g_instance_count++;
+            return (led_handle_t)led;
+            
+
+        }
+
+        return 0;
+    }
+    
+}
+
+
+led_err_t led_set_mode(led_handle_t handle,led_mode_t mode){
+    if(!handle&&!g_time_if){
+        return LED_ERR_INVALID_ARG;
+    }
+    led_instance_t* led=(led_instance_t*)handle;
+    if(mode==LED_MODE_FLASH_3X){
+        led->blink_count=0;
+    }
+    led->mode=mode;
+    led->last_update_ms=g_time_if->get_tick_ms();
+    return LED_OK;
 }

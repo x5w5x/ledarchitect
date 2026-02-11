@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 19:49:26
- * @LastEditTime: 2026-02-09 23:22:55
+ * @LastEditTime: 2026-02-11 21:47:07
  * @FilePath: \led\led\config\config_led.h
  */
 #ifndef _CONFIG_LED_
@@ -14,6 +14,7 @@ typedef enum{
     LED_ID_STATUS=0,
     LED_ID_BREATH,
     LED_ID_TWO,
+    // LED_ID_ONE,
     LED_COUNT //必须有,不能使用自动计数器
 
 }led_id_t;
