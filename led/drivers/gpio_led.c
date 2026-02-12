@@ -1,7 +1,8 @@
 #include"led_driver.h"
 #include"config_led.h"
-#include"stm32f10x.h"
+// #include"stm32f10x.h"
 #include "hal_gpio.h"
+#include"led_driver_registry.h"
 
 //LED控制结构体
 typedef struct{
@@ -79,7 +80,7 @@ static int gpio_set_color(led_driver_t* self, const led_color_t* color) {
 // }
 
 //最大GPIO LED数量
-#define MAX_GPIO_LEDS 4
+#define MAX_GPIO_LEDS 5
 
 static led_driver_t g_drv_pool[MAX_GPIO_LEDS] = {0};  //静态LED驱动数组
 static gpio_led_ctx_t g_ctx_pool[MAX_GPIO_LEDS] = {0}; //LED驱动池
@@ -108,4 +109,13 @@ led_driver_t* gpio_led_create(const led_config_t* cfg) {
 
     g_index++;
     return drv;
+}
+
+//注册函数
+static led_driver_t* gpio_led_create_wrapper(const void* config){
+    return gpio_led_create((const led_config_t*)config);
+}
+
+void gpio_led_register(void) {
+    led_driver_register(LED_DRIVER_TYPE_GPIO, gpio_led_create_wrapper);
 }

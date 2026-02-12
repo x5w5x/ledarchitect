@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 20:24:05
- * @LastEditTime: 2026-02-11 21:47:59
+ * @LastEditTime: 2026-02-12 22:05:36
  * @FilePath: \led\led\core\led_core.h
  */
 // led_core.h
@@ -69,6 +69,7 @@ led_mode_t led_get_state_by_config(const led_config_t* cfg); //查询状态 V1.1
 
 typedef struct led_instance_t* led_handle_t;
 led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted);
+led_handle_t led_create_pwm(const char* name, GPIO_TypeDef* port, uint16_t pin, uint8_t inverted);
 led_err_t led_set_mode(led_handle_t,led_mode_t mode);
 
 #define MAX_LED_INSTANCES 8 //最大的驱动池数量
