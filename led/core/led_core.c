@@ -45,8 +45,9 @@ led_err_t led_manager_init(const TimeInsterface* time_if) {
             led->breath_level = 0;
             led->breath_dir = 1;
             g_led_used[i]=1;
+            g_instance_count++;
         }
-        g_instance_count++;
+        
     }
     return LED_OK;
 }
@@ -55,6 +56,7 @@ led_err_t led_manager_init(const TimeInsterface* time_if) {
  * @brief 更新单个 LED 状态
  */
 static void led_update_single(led_instance_t* led) {
+    if (!led || !led->driver || !g_time_if) return; //v2.3增加
     uint32_t now = g_time_if->get_tick_ms(); //使用时间接口 V1.1修改
     led->current_state=led->mode; //同步状态 v1.1新增
 
@@ -149,52 +151,7 @@ led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode) {
    
 }
 
-//查询状态 v1.1新增
 
-// led_mode_t led_get_state_by_config(const led_config_t* cfg){
-//     // for(int  i=0;i<LED_ID_MAX;i++){
-//     //     if(g_leds[i].config==cfg){
-//     //         return g_leds[i].current_state;
-//     //     }
-//     // }
-//     // return LED_MODE_OFF;
-
-//     if(!cfg||cfg->id>=LED_COUNT) return LED_MODE_OFF;
-//     return g_leds[cfg->id].current_state;
-// }
-
-//V2.2
-
-//从内存池分配一个实例
-// static led_instance_t* alloc_led_instance(void){
-
-//     for(int i=0;i<MAX_LED_INSTANCES;i++){
-//         if(!g_led_used[i]){
-//             g_led_used[i]=1;
-//             g_instance_count++;
-//             memset(&g_led_pool[i],0,sizeof(led_instance_t));
-//             return &g_led_pool[i];
-            
-//         }
-//     }
-//     return 0;
-// }
-
-
-//
-// static void free_led_instance(led_instance_t* inst) {
-//     if (!inst) return;
-//     for (int i = 0; i < MAX_LED_INSTANCES; i++) {
-//         if (&g_led_pool[i] == inst) {
-//             g_led_used[i] = 0;
-//             g_instance_count--;
-//             break;
-//         }
-//     }
-   
-// }
-
-//
 led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted){
     if(!g_time_if) return NULL;
 
@@ -205,7 +162,7 @@ led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, u
             led_config_t cfg; //临时配置
             cfg.name=name?name:"led";
             cfg.port=port;
-            cfg,pin;
+            cfg.pin=pin;
             cfg.inverted=inverted;
             cfg.is_pwm=0;
 
@@ -226,14 +183,14 @@ led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, u
 
         }
 
-        return 0;
+        
     }
-    
+    return NULL;
 }
 
 
 led_err_t led_set_mode(led_handle_t handle,led_mode_t mode){
-    if(!handle&&!g_time_if){
+    if(!handle||!g_time_if){
         return LED_ERR_INVALID_ARG;
     }
     led_instance_t* led=(led_instance_t*)handle;
