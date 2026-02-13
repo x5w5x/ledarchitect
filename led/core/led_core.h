@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 20:24:05
- * @LastEditTime: 2026-02-12 22:05:36
+ * @LastEditTime: 2026-02-13 16:40:13
  * @FilePath: \led\led\core\led_core.h
  */
 // led_core.h
@@ -39,7 +39,7 @@ typedef enum {
  * @brief 单个 LED 实例
  */
 typedef struct {
-    // const led_config_t* config; // 配置 //需不需要都行
+    //  const led_config_t* config; // 配置 //需不需要都行
     led_driver_t* driver;       // 驱动
     led_mode_t mode;            // 当前模式
     uint32_t last_update_ms;    // 上次更新时间（ms）

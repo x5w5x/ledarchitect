@@ -4,7 +4,8 @@
 #include"stdint.h"
 #include "delay1.h"      // 提供 GetTickCount()
 #include"string.h"
-#include"led_driver_registry.h"
+// #include"led_driver_registry.h"
+#include"pwm_led.h"
 // 时间常量（毫秒）
 #define BLINK_SLOW_HALF_PERIOD  500  // 慢闪半周期
 #define BLINK_FAST_HALF_PERIOD  100  // 快闪半周期
@@ -65,9 +66,13 @@ led_err_t led_manager_init(const TimeInsterface* time_if) {
         const led_config_t* cfg = &g_led_configs[i];
         
         // === 自动选择驱动类型 ===
-        led_driver_type_t drv_type = cfg->is_pwm ? LED_DRIVER_TYPE_PWM : LED_DRIVER_TYPE_GPIO;
         led_instance_t* led = &g_led_pool[i];
-        led->driver = led_driver_create_by_type(drv_type, cfg);
+        if(!cfg->is_pwm){
+                led->driver=gpio_led_create(cfg);
+            }else{
+                led->driver=pwm_led_create(cfg);
+            }
+
 
         if (led->driver) {
             // 调用驱动方法（现在统一接口）
@@ -199,44 +204,6 @@ led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode) {
    
 }
 
-
-// led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted){
-//     if(!g_time_if) return NULL;
-
-//     for(int i=STATIC_LED_COUNT;i<MAX_LED_INSTANCES;i++){
-//         if(!g_led_used[i]){
-//             led_instance_t* led=&g_led_pool[i]; //分配内存空间
-//             memset(led,0,sizeof(led_instance_t));
-//             led_config_t cfg; //临时配置
-//             cfg.name=name?name:"led";
-//             cfg.port=port;
-//             cfg.pin=pin;
-//             cfg.inverted=inverted;
-//             cfg.is_pwm=0;
-
-//             led->driver=gpio_led_create(&cfg);
-//             if(!led->driver) return NULL;
-
-//             led->driver->init(led->driver);
-//             led->driver->set_state(led->driver,0);
-//             led->mode=LED_MODE_OFF;
-//             led->last_update_ms=g_time_if->get_tick_ms();
-//             led->blink_count=0;
-//             led->breath_level = 0;
-//             led->breath_dir = 1;
-//             g_led_used[i]=1;
-//             g_instance_count++;
-//             return (led_handle_t)led;
-            
-
-//         }
-
-        
-//     }
-//     return NULL;
-// }
-
-
 led_err_t led_set_mode(led_handle_t handle,led_mode_t mode){
     if(!handle||!g_time_if){
         return LED_ERR_INVALID_ARG;
@@ -271,8 +238,11 @@ static led_handle_t led_create_internal(GPIO_TypeDef* port, uint16_t pin, uint8_
             cfg.is_pwm = is_pwm;
 
             // 自动选择驱动
-            led_driver_type_t drv_type = is_pwm ? LED_DRIVER_TYPE_PWM : LED_DRIVER_TYPE_GPIO;
-            led->driver = led_driver_create_by_type(drv_type, &cfg);
+            if(!is_pwm){
+                led->driver=gpio_led_create(&cfg);
+            }else{
+                led->driver=pwm_led_create(&cfg);
+            }
 
             if (!led->driver) {
                 // 创建失败，回滚

@@ -2,7 +2,6 @@
 #include"config_led.h"
 // #include"stm32f10x.h"
 #include "hal_gpio.h"
-#include"led_driver_registry.h"
 
 //LED控制结构体
 typedef struct{
@@ -19,36 +18,17 @@ static int gpio_init(led_driver_t* self){
     hal_gpio_init(ctx->port, ctx->pin, HAL_GPIO_MODE_OUTPUT_PP);
     hal_gpio_set(ctx->port, ctx->pin, ctx->inverted ? 1 : 0); // 默认灭
     return 0;
-    // uint32_t rcc_clk=0; //时钟变量
-    //  if (ctx->port == GPIOA) rcc_clk = RCC_APB2Periph_GPIOA;
-    // else if (ctx->port == GPIOB) rcc_clk = RCC_APB2Periph_GPIOB;
-    // else if (ctx->port == GPIOC) rcc_clk = RCC_APB2Periph_GPIOC;
-    // RCC_APB2PeriphClockCmd(rcc_clk, ENABLE);
 
-    // GPIO_InitTypeDef gpio = {0};
-    // gpio.GPIO_Pin = ctx->pin;
-    // gpio.GPIO_Mode = GPIO_Mode_Out_PP;
-    // gpio.GPIO_Speed = GPIO_Speed_2MHz;
-    // GPIO_Init(ctx->port, &gpio);
-
-    // return 0;
     
 }
 //设置led状态
 static int gpio_set_state(led_driver_t* self, uint8_t on) {
     gpio_led_ctx_t* ctx = (gpio_led_ctx_t*)self->priv;
     // 处理反相逻辑
-    // uint8_t val = ctx->inverted ? !on : on;
-    // if (val) {
-    //     GPIO_SetBits(ctx->port, ctx->pin);
-    // } else {
-    //     GPIO_ResetBits(ctx->port, ctx->pin);
-    // }
-    // return 0;
-
     uint8_t value = on ? 1 : 0;
     if (ctx->inverted) value = !value;
     hal_gpio_set(ctx->port, ctx->pin, value);
+    return 1;
 }
 
 //设置亮度
@@ -60,24 +40,6 @@ static int gpio_set_color(led_driver_t* self, const led_color_t* color) {
     uint8_t on = (color->r || color->g || color->b);
     return gpio_set_state(self, on);
 }
-
-
-// led_driver_t* gpio_led_create(const led_config_t* cfg){
-//     static led_driver_t drv={0};
-//     static gpio_led_ctx_t ctx={0};
-//     ctx.port=cfg->port;
-//     ctx.pin=cfg->pin;
-//     ctx.inverted=cfg->inverted;
-
-//     //绑定函数指针
-//     drv.priv=&ctx;
-//     drv.init=gpio_init;
-//     drv.set_state=gpio_set_state;
-//     drv.set_brightness=gpio_set_brightness;
-//     drv.set_color=gpio_set_color;
-//     return &drv;
-
-// }
 
 //最大GPIO LED数量
 #define MAX_GPIO_LEDS 5
@@ -112,10 +74,10 @@ led_driver_t* gpio_led_create(const led_config_t* cfg) {
 }
 
 //注册函数
-static led_driver_t* gpio_led_create_wrapper(const void* config){
-    return gpio_led_create((const led_config_t*)config);
-}
+// static led_driver_t* gpio_led_create_wrapper(const void* config){
+//     return gpio_led_create((const led_config_t*)config);
+// }
 
-void gpio_led_register(void) {
-    led_driver_register(LED_DRIVER_TYPE_GPIO, gpio_led_create_wrapper);
-}
+// void gpio_led_register(void) {
+//     led_driver_register(LED_DRIVER_TYPE_GPIO, gpio_led_create_wrapper);
+// }

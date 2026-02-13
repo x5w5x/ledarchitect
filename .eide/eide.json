@@ -372,7 +372,8 @@
           "led/core",
           "led/drivers",
           "led/utils",
-          "led/test"
+          "led/test",
+          "led/hal"
         ],
         "libList": [
           "led/config",

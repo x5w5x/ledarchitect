@@ -15,7 +15,8 @@
             "led_manager.h": "c",
             "led_event.h": "c",
             "stm32f10x.h": "c",
-            "compiler.h": "c"
+            "compiler.h": "c",
+            "hal_gpio.h": "c"
         }
     },
     "extensions": {}
