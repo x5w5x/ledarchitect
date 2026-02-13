@@ -1,14 +1,10 @@
 #include"led_driver.h"
 #include"config_led.h"
-// #include"stm32f10x.h"
-#include "hal_gpio.h"
-
+#include"gpio_led.h"
+#include "led_core.h" 
+#include"led_context.h"
 //LED控制结构体
-typedef struct{
-    GPIO_TypeDef* port; //端口
-    uint16_t pin; //引脚
-    uint8_t inverted; //是否反向控制
-} gpio_led_ctx_t;
+
 //初始化引脚
 static int gpio_init(led_driver_t* self){
     gpio_led_ctx_t* ctx=(gpio_led_ctx_t*) self->priv; //强制转换私有指针
@@ -41,43 +37,24 @@ static int gpio_set_color(led_driver_t* self, const led_color_t* color) {
     return gpio_set_state(self, on);
 }
 
-//最大GPIO LED数量
-#define MAX_GPIO_LEDS 5
-
-static led_driver_t g_drv_pool[MAX_GPIO_LEDS] = {0};  //静态LED驱动数组
-static gpio_led_ctx_t g_ctx_pool[MAX_GPIO_LEDS] = {0}; //LED驱动池
-static uint8_t g_index = 0; //LED数量计数器
 
 //创建LED实例
 led_driver_t* gpio_led_create(const led_config_t* cfg) {
-    if (g_index >= MAX_GPIO_LEDS) {
-        return 0; // 超出最大数量
-    }
+     gpio_led_obj_t* obj = (gpio_led_obj_t*)led_obj_alloc(CTX_TYPE_GPIO);
+    if (!obj) return 0;
 
-    led_driver_t* drv = &g_drv_pool[g_index]; //  获取驱动程序和上下文结构的指针
-    gpio_led_ctx_t* ctx = &g_ctx_pool[g_index];
+    // 初始化 driver
+    obj->drv.priv = &obj->ctx;
+    obj->drv.init = gpio_init;
+    obj->drv.set_state = gpio_set_state;
+    obj->drv.set_brightness = gpio_set_brightness;
 
-    // 初始化上下文
-    ctx->port = cfg->port;
-    ctx->pin = cfg->pin;
-    ctx->inverted = cfg->inverted;
+    // 初始化 ctx
+    obj->ctx.port = cfg->port;
+    obj->ctx.pin = cfg->pin;
+    obj->ctx.inverted = cfg->inverted;
 
-    // 绑定接口函数
-    drv->priv = ctx;
-    drv->init = gpio_init;
-    drv->set_state = gpio_set_state;
-    drv->set_brightness = gpio_set_brightness;
-    drv->set_color = gpio_set_color;
-
-    g_index++;
-    return drv;
+    return &obj->drv; // 返回 driver 地址
 }
 
-//注册函数
-// static led_driver_t* gpio_led_create_wrapper(const void* config){
-//     return gpio_led_create((const led_config_t*)config);
-// }
 
-// void gpio_led_register(void) {
-//     led_driver_register(LED_DRIVER_TYPE_GPIO, gpio_led_create_wrapper);
-// }

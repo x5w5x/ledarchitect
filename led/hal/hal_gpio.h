@@ -24,7 +24,6 @@ typedef enum{
 
 //初始化
 void hal_gpio_init(hal_gpio_port_t port, hal_gpio_pin_t pin, hal_gpio_mode_t mode);
-// void hal_gpio_set(hal_gpio_port_t port,hal_gpio_pin_t pin,hal_gpio_mode_t mode);
 
 //输出
 void hal_gpio_set(hal_gpio_port_t port,hal_gpio_pin_t,uint8_t high);

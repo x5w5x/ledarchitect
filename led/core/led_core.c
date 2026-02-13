@@ -1,61 +1,21 @@
 // led_core.c
 #include "led_core.h"
-#include "gpio_led.h"   // 声明 gpio_led_create
 #include"stdint.h"
-#include "delay1.h"      // 提供 GetTickCount()
 #include"string.h"
-// #include"led_driver_registry.h"
-#include"pwm_led.h"
+#include"led_context.h"
 // 时间常量（毫秒）
 #define BLINK_SLOW_HALF_PERIOD  500  // 慢闪半周期
 #define BLINK_FAST_HALF_PERIOD  100  // 快闪半周期
 #define BREATH_STEP_INTERVAL    30   // 呼吸步进间隔
 
-// 全局 LED 实例数组
-// static led_instance_t g_leds[LED_COUNT];
-static const TimeInsterface* g_time_if =0; //全局时间 V1.1 新增
+static const TimeInterface* g_time_if =0; //全局时间 V1.1 新增
 
 //V2.2 驱动池
 static led_instance_t g_led_pool[MAX_LED_INSTANCES];
 static int g_led_used[MAX_LED_INSTANCES]={0};
 static int g_instance_count=0;
 
-
-
-/**
- * @brief 初始化所有 LED
- */
-// led_err_t led_manager_init(const TimeInsterface* time_if) {
-//     //初始化时间
-//     if(!time_if||!time_if->get_tick_ms) return LED_ERR_INVALID_ARG;
-//     g_time_if=time_if;
-
-//     //清空内存池 V2.2新增
-//     memset(g_led_pool,0,sizeof(g_led_pool));
-//     memset(g_led_used,0,sizeof(g_led_used));
-//     //V2.2修改
-//     for (int i = 0; i < STATIC_LED_COUNT&&i<MAX_LED_INSTANCES; i++) {
-//         led_instance_t* led=&g_led_pool[i];
-//         led->driver=gpio_led_create(&g_led_configs[i]);
-//         if(led->driver){
-//             led->driver->init(led->driver);
-//             led->driver->set_state(led->driver,0);
-//             led->mode=LED_MODE_OFF;
-//             led->last_update_ms=g_time_if->get_tick_ms();
-//             led->blink_count=0;
-//             led->breath_level = 0;
-//             led->breath_dir = 1;
-//             g_led_used[i]=1;
-//             g_instance_count++;
-//         }
-        
-//     }
-//     return LED_OK;
-// }
-
-
-//
-led_err_t led_manager_init(const TimeInsterface* time_if) {
+led_err_t led_manager_init(const TimeInterface* time_if) {
     if (!time_if || !time_if->get_tick_ms) return LED_ERR_INVALID_ARG;
     g_time_if = time_if;
 
@@ -94,10 +54,6 @@ led_err_t led_manager_init(const TimeInsterface* time_if) {
 }
 
 
-
-/**
- * @brief 更新单个 LED 状态
- */
 static void led_update_single(led_instance_t* led) {
     if (!led || !led->driver || !g_time_if) return; //v2.3增加
     uint32_t now = g_time_if->get_tick_ms(); //使用时间接口 V1.1修改
@@ -167,9 +123,6 @@ static void led_update_single(led_instance_t* led) {
     }
 }
 
-/**
- * @brief 主更新函数（必须在主循环中定期调用）
- */
 void led_manager_update(void) {
     //V2.2修改
     if(!g_time_if) return;
@@ -181,9 +134,6 @@ void led_manager_update(void) {
     }
 }
 
-/**
- * @brief 通过配置指针设置 LED 模式
- */
 led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode) {
     //V2.2修改
     if(id>=STATIC_LED_COUNT||!g_time_if) return LED_ERR_INVALID_ARG;
@@ -217,8 +167,6 @@ led_err_t led_set_mode(led_handle_t handle,led_mode_t mode){
     return LED_OK;
 }
 
-//
-// led_core.c —— 添加一个内部辅助函数
 static led_handle_t led_create_internal(GPIO_TypeDef* port, uint16_t pin, uint8_t inverted, uint8_t is_pwm) {
     if (!g_time_if) return NULL; // 必须先调用 led_manager_init
 
@@ -269,7 +217,7 @@ static led_handle_t led_create_internal(GPIO_TypeDef* port, uint16_t pin, uint8_
     return NULL; // 池满
 }
 
-// led_core.c —— 在文件末尾添加
+
 led_handle_t led_create_gpio(const char* name, GPIO_TypeDef* port, uint16_t pin, uint8_t inverted) {
     (void)name; // 当前未使用 name，可忽略（未来可存入 log 或 debug）
     return led_create_internal(port, pin, inverted, 0);
@@ -278,4 +226,13 @@ led_handle_t led_create_gpio(const char* name, GPIO_TypeDef* port, uint16_t pin,
 led_handle_t led_create_pwm(const char* name, GPIO_TypeDef* port, uint16_t pin, uint8_t inverted) {
     (void)name;
     return led_create_internal(port, pin, inverted, 1);
+}
+
+
+void led_destroy(led_handle_t handle) {
+    led_instance_t* led = (led_instance_t*)handle;
+    if (led->driver) {
+        led_obj_free(led->driver); // 回收整个对象
+    }
+
 }

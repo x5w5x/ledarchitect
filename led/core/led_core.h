@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 20:24:05
- * @LastEditTime: 2026-02-13 16:40:13
+ * @LastEditTime: 2026-02-13 22:18:47
  * @FilePath: \led\led\core\led_core.h
  */
 // led_core.h
@@ -21,7 +21,7 @@
 
     uint32_t (*get_tick_ms)(void);
 
- }TimeInsterface;
+ }TimeInterface;
 
 /**
  * @brief LED 工作模式
@@ -56,7 +56,7 @@ typedef struct {
 /**
  * @brief 公共 API
  */
-led_err_t led_manager_init(const TimeInsterface* time_if);                     // 初始化所有 LED V1.1
+led_err_t led_manager_init(const TimeInterface* time_if);                     // 初始化所有 LED V1.1
 void led_manager_update(void);                   // 主循环调用，推进状态机
 // led_err_t led_set_mode_by_config(const led_config_t* cfg, led_mode_t mode); // 设置模式 V2.2"删除
 led_err_t led_set_mode_by_id(led_id_t id, led_mode_t mode); //设置模式 V2.2修改
@@ -65,7 +65,6 @@ led_mode_t led_get_state_by_config(const led_config_t* cfg); //查询状态 V1.1
 
 
 //V2.2 新增 双模式支持
-//
 
 typedef struct led_instance_t* led_handle_t;
 led_handle_t led_create_gpio(const char* name,GPIO_TypeDef* port,uint16_t pin, uint8_t inverted);
@@ -74,4 +73,6 @@ led_err_t led_set_mode(led_handle_t,led_mode_t mode);
 
 #define MAX_LED_INSTANCES 8 //最大的驱动池数量
 #define STATIC_LED_COUNT LED_COUNT
+
+void led_destroy(led_handle_t handle);
 #endif

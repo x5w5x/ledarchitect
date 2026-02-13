@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-06 19:12:36
- * @LastEditTime: 2026-02-13 20:39:57
+ * @LastEditTime: 2026-02-13 21:12:39
  * @FilePath: \led\User\main.c
  */
 
@@ -17,7 +17,7 @@ int main(void)
 {
 
 	 Delay_Init();
-	 TimeInsterface time_if={
+	 TimeInterface time_if={
 		.get_tick_ms=get_tick //时间系统接口
 	 };
 	led_manager_init(&time_if);
