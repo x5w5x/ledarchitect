@@ -1,7 +1,7 @@
 /*
  * @Author: 轩
  * @Date: 2026-02-12 21:30:32
- * @LastEditTime: 2026-02-13 22:15:00
+ * @LastEditTime: 2026-02-14 10:17:30
  * @FilePath: \led\led\drivers\pwm_led.c
  */
 // pwm_led.c
@@ -9,7 +9,7 @@
 // #include "stm32f10x.h"
 #include"hal_pwm.h"
 #include"board_led_map.h"
-#include"led_context.h"
+#include"led_pool.h"
 
 // 初始化定时器和 GPIO
 static hal_pwm_channel_t pwm_init_timer_channel(GPIO_TypeDef* port, uint16_t pin) {
@@ -78,7 +78,7 @@ led_driver_t* pwm_led_create(const led_config_t* cfg) {
     if (ch == HAL_PWM_CH_INVALID) {
         return 0; // 不支持的引脚
     }
-    pwm_led_obj_t* obj = (pwm_led_obj_t*)led_obj_alloc(CTX_TYPE_PWM);
+    pwm_led_pool_t* obj = (pwm_led_pool_t*)led_pool_alloc(LED_TYPE_PWM);
     if (!obj) {
         return 0;
     }

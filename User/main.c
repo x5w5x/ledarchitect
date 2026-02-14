@@ -31,6 +31,7 @@ int main(void)
 	  //动态创建PWM_led
 	led_handle_t pwm_led = led_create_pwm("dynamic_pwm", GPIOB, GPIO_Pin_6, 1);
 	led_set_mode(pwm_led, LED_MODE_BREATHING);
+	led_destroy(pwm_led);
 
 
 

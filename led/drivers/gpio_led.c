@@ -2,7 +2,7 @@
 #include"config_led.h"
 #include"gpio_led.h"
 #include "led_core.h" 
-#include"led_context.h"
+#include"led_pool.h"
 //LED控制结构体
 
 //初始化引脚
@@ -40,7 +40,7 @@ static int gpio_set_color(led_driver_t* self, const led_color_t* color) {
 
 //创建LED实例
 led_driver_t* gpio_led_create(const led_config_t* cfg) {
-     gpio_led_obj_t* obj = (gpio_led_obj_t*)led_obj_alloc(CTX_TYPE_GPIO);
+     gpio_led_pool_t* obj = (gpio_led_pool_t*)led_pool_alloc(LED_TYPE_GPIO);
     if (!obj) return 0;
 
     // 初始化 driver

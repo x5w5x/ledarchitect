@@ -2,7 +2,7 @@
 #include "led_core.h"
 #include"stdint.h"
 #include"string.h"
-#include"led_context.h"
+#include"led_pool.h"
 // 时间常量（毫秒）
 #define BLINK_SLOW_HALF_PERIOD  500  // 慢闪半周期
 #define BLINK_FAST_HALF_PERIOD  100  // 快闪半周期
@@ -229,10 +229,27 @@ led_handle_t led_create_pwm(const char* name, GPIO_TypeDef* port, uint16_t pin, 
 }
 
 
-void led_destroy(led_handle_t handle) {
-    led_instance_t* led = (led_instance_t*)handle;
-    if (led->driver) {
-        led_obj_free(led->driver); // 回收整个对象
-    }
+// void led_destroy(led_handle_t handle) {
+//     led_instance_t* led = (led_instance_t*)handle;
+//     if (led->driver) {
+//         led_pool_free(led->driver); // 回收整个对象
+//     }
 
+// }
+
+void led_destroy(led_handle_t handle) {
+    if (!handle || !g_time_if) return;
+    
+    led_instance_t* led = (led_instance_t*)handle;
+    // 从池中找到索引（假设 handle 是 g_led_pool 的元素地址）
+    int idx = led - g_led_pool;
+    if (idx < STATIC_LED_COUNT || idx >= MAX_LED_INSTANCES || !g_led_used[idx]) 
+        return;
+
+    if (led->driver) {
+        led_pool_free(led->driver); // 回收驱动对象
+    }
+    memset(led, 0, sizeof(*led));
+    g_led_used[idx] = 0;
+    g_instance_count--;
 }
